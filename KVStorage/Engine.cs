@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Reflection;
 using System.Dynamic;
@@ -22,18 +21,46 @@ namespace KVStorage
     {
         //globals
         static DataTypeSerializer _datatype = new DataTypeSerializer();
-        HashFNV _hash = new HashFNV();
+        //HashFNV _hash = new HashFNV();
+        Collections _cols = new Collections();
         Tags _tags = new Tags();
+        IO _io = new IO();
+        //Search _searchdocs = new Search();
+
         List<KVDocument> lst_docs_to_save = new List<KVDocument>();
+
+        public bool open(string storage_name, params string[] parameters)
+        {
+            bool bool_ret = false;
+
+            Globals.storage_dir = storage_name; //folder where all files are
+            _io.parseparams(parameters); //parse params
+            bool_ret = _io.init(); //init storage
+
+            return bool_ret;
+        }
+
+        public void close()
+        {
+            _io.finalize(); //close storage
+        }
 
         //
         //C.R.U.D.
         //
 
+        public bool set(string collection)
+        {
+            return set(collection, null);
+        }
         public bool set(Document document)
         {
+            return set("", document);
+        }
+        public bool set(string collection, Document document)
+        {
             bool bool_ret = false;
-            Task<KVDocument> task_doc = _add_async(document);
+            Task<KVDocument> task_doc = _add_async(collection, document);
             task_doc.Wait();
             //get result
             if (task_doc.Result != null)
@@ -42,12 +69,21 @@ namespace KVStorage
             return bool_ret;
         }
         //async creation
-        private async Task<KVDocument> _add_async(Document document)
+        private async Task<KVDocument> _add_async(string collection, Document document)
         {
             int i = 0;
+            ulong uhash_col = 0;
             bool bool_has_dict = false;
             //Dictionary<string, object> document_dictionary;
 
+            //create new collection
+            if (collection.Length != 0)
+            {
+                if (collection.Length > Globals.storage_col_max_len) { return null; } //colname more than expected
+                uhash_col = _cols.add(collection);
+            }
+
+            //create new document
             if (document != null)
             {
                 Type _type = document.GetType();
@@ -59,7 +95,7 @@ namespace KVStorage
                 {
                     fieldInfo = fields[i];
                     string dict_name = fieldInfo.Name;
-                    if (dict_name == "dict") { bool_has_dict = true; break; }
+                    if (dict_name == "dict") { bool_has_dict = true; break; } //if not appropriate dictionary inside
                 }
 
                 //if it's not a true Document class - exit
@@ -69,12 +105,14 @@ namespace KVStorage
                 Dictionary<string, object> document_dictionary = (Dictionary<string, object>)fields[i].GetValue(document);
 
                 KVDocument _doc = new KVDocument();
+                _doc.collection = uhash_col; //hash collection
                 foreach (var _fieldInfo in document_dictionary)//document.dict) //go thru all fields
                 {
                     //if (fieldInfo.Name.Length < _globals.storage_tags_name_length) //get info if field's name not more than it's possible max value
                     {
                         if (_fieldInfo.Key.Length > 0)
                         {
+                            if (_fieldInfo.Key.Length > Globals.storage_tag_max_len) { _doc = null; break; }
                             _doc.tag_hash.Add(_tags.add(_fieldInfo.Key)); //get/set tags
                             _doc.tag_data_pos.Add(0);
                             _doc.tag_data_type.Add(_datatype.returnTypeAndRawByteArray(_fieldInfo.Value, out temp_bytes));
@@ -113,9 +151,54 @@ namespace KVStorage
 
         public bool commit()
         {
+            if (lst_docs_to_save.Count == 0) { return false; } //nothing to save
+
+            Task<bool> task_commit = _commit_async();
+            task_commit.Wait();
+            // result
+            if (task_commit.Result == false)
+            { return false; }
+            else
+            { return true; }
+        }
+
+        //async creation
+        private async Task<bool> _commit_async()
+        {
             bool bool_ret = false;
 
-            return bool_ret;
+            //search and paste documents
+            bool_ret = _io.storageisopen();
+            if (bool_ret == false)
+            { bool_ret = _io.init(); } //try to reopen storage
+
+            try
+            {
+                if (bool_ret == true) //storage initialization is ok
+                {
+                    //get new cols and save it
+                    byte[] bcolstosave = _cols.getbytes();
+                    _io.write(ref bcolstosave, IO.IO_PARAM.COLS_STREAM);
+                    bcolstosave = new byte[0]; //instant flush
+                    
+                    //get new tags and save it
+                    byte[] btagstosave = _tags.getbytes();
+                    _io.write(ref btagstosave, IO.IO_PARAM.TAGS_STREAM);
+                    btagstosave = new byte[0]; //instant flush
+
+                    //get new data and save it
+
+
+                    //get new log records and save it
+
+                }
+            }
+            catch (Exception) //close stream
+            { _io.finalize(); }
+            _io.finalize();
+            _io.finalize();
+            //result
+            return await Task.FromResult(bool_ret);
         }
 
     }
@@ -154,6 +237,7 @@ namespace KVStorage
 
     internal class KVDocument
     {
+        internal ulong collection = 0;
         internal List<ulong> tag_hash = new List<ulong>();
         internal List<byte> tag_data_type = new List<byte>();
         internal List<long> tag_data_pos = new List<long>();

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,7 +7,7 @@ namespace KVStorage
 {
     internal class DataTypeSerializer
     {
-        internal Service _service = new Service();
+        internal Service _service = Globals._service;
 
         public byte returnTypeAndRawByteArray(object _data, out byte[] out_bytes)
         {
