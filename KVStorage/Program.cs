@@ -28,7 +28,7 @@ namespace KVStorage
             
             //set
             //var output_document = kvstorage.get();
-            kvstorage.get(Fields.New("id", "2"), Fields.New("k", "j"));
+            //kvstorage.get("get * WHERE ('id'>10 && id<20) ! ('name'=='test22');");
 
             s.Stop();
 

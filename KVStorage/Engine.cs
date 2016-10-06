@@ -89,7 +89,7 @@ namespace KVStorage
         }
 
         //retrieve new document
-        public List<Document> get(params KeyValuePair<string, string>[] conditions)
+        public List<Document> get(string conditions)//(params KeyValuePair<string, string>[] conditions)
         {
             List<Document> lst_out = new List<Document>(10);
 
