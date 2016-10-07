@@ -46,6 +46,7 @@
     <Compile Include="Engine.cs" />
     <Compile Include="Globals.cs" />
     <Compile Include="Hash.cs" />
+    <Compile Include="Pages.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IO.cs" />

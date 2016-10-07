@@ -25,6 +25,7 @@ namespace KVStorage
         Collections _cols = new Collections();
         Tags _tags = new Tags();
         IO _io = new IO();
+        Pages _pages = new Pages();
         //Search _searchdocs = new Search();
 
         List<KVDocument> lst_docs_to_save = new List<KVDocument>();
@@ -131,7 +132,10 @@ namespace KVStorage
         {
             List<Document> lst_out = new List<Document>(10);
 
+            //parse conditions
 
+
+            //get data out the memory
             for (int i = 0; i < lst_docs_to_save.Count; i++)
             {
                 Document _doc = new Document();
@@ -185,12 +189,15 @@ namespace KVStorage
                     byte[] btagstosave = _tags.getbytes();
                     _io.write(ref btagstosave, IO.IO_PARAM.TAGS_STREAM);
                     btagstosave = new byte[0]; //instant flush
-
+                    
                     //get new data and save it
-
 
                     //get new log records and save it
 
+
+
+                    //create/update page
+                    //byte[] b_array_to_save = _pages.makepage();
                 }
             }
             catch (Exception) //close stream

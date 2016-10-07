@@ -24,7 +24,21 @@ namespace KVStorage
         internal static byte storage_col_max_len = 30;
         internal static byte storage_tag_max_len = 30;
 
+        internal static class PagesParams
+        {
+            internal static bool bool_update_existing_page;
+            internal static int pos_in_updating_page;
+            internal static ushort current_freecell;
+            internal static ushort max_freecells;
+            internal static long current_file_length;
+            internal static long output_file_length;
 
+            internal static void flush()
+            {
+                bool_update_existing_page = false; pos_in_updating_page = 0; current_file_length = 0; output_file_length = 0;
+                current_freecell = 0; max_freecells = 0;
+            }
+        }
     }
 
 }
