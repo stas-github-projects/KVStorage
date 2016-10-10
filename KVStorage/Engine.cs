@@ -194,8 +194,7 @@ namespace KVStorage
                     //get new document and save it
                     byte[] bdocstosave = _service.ListDocsToArray(ref lst_docs_to_save);
                     _io.write(ref bdocstosave, IO.IO_PARAM.DOC_STREAM);
-                    btagstosave = new byte[0]; //instant flush    
-
+                    btagstosave = new byte[0]; //instant flush
                     //get new log records and save it
 
 

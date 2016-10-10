@@ -114,8 +114,14 @@ namespace KVStorage
                 }
             }
             else if (param == IO_PARAM.LOG_STREAM) //save log
-            { 
-                //TO-DO
+            {
+                //if (fstream_tags != null) //TO-DO //LOGS
+                {
+                    fstream_log.Position = fstream_log.Length;
+                    fstream_log.Write(barray, 0, barray.Length);
+                    fstream_log.Position = fstream_log.Length;
+                    bool_ret = true;
+                }
             }
 
             return bool_ret;
