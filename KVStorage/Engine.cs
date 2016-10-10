@@ -25,10 +25,12 @@ namespace KVStorage
         Collections _cols = new Collections();
         Tags _tags = new Tags();
         IO _io = new IO();
-        Pages _pages = new Pages();
+        //Pages _pages = new Pages();
+        Service _service = new Service();
         //Search _searchdocs = new Search();
 
         List<KVDocument> lst_docs_to_save = new List<KVDocument>();
+
 
         public bool open(string storage_name, params string[] parameters)
         {
@@ -115,10 +117,11 @@ namespace KVStorage
                         {
                             if (_fieldInfo.Key.Length > Globals.storage_tag_max_len) { _doc = null; break; }
                             _doc.tag_hash.Add(_tags.add(_fieldInfo.Key)); //get/set tags
-                            _doc.tag_data_pos.Add(0);
+                            //_doc.tag_data_pos.Add(0);
                             _doc.tag_data_type.Add(_datatype.returnTypeAndRawByteArray(_fieldInfo.Value, out temp_bytes));
                             _doc.tag_data_len.Add(temp_bytes.Length);
-                            _doc.tag_data.Add(temp_bytes);//data byte array
+                            _doc.tag_data.Add(temp_bytes); //data byte array
+                            _doc._tag_data_length += temp_bytes.Length; //sum of all data length
                         }
                     }
                 }//foreach
@@ -183,21 +186,24 @@ namespace KVStorage
                     //get new cols and save it
                     byte[] bcolstosave = _cols.getbytes();
                     _io.write(ref bcolstosave, IO.IO_PARAM.COLS_STREAM);
-                    bcolstosave = new byte[0]; //instant flush
-                    
+                    bcolstosave = new byte[0]; //instant flush                    
                     //get new tags and save it
                     byte[] btagstosave = _tags.getbytes();
                     _io.write(ref btagstosave, IO.IO_PARAM.TAGS_STREAM);
-                    btagstosave = new byte[0]; //instant flush
-                    
-                    //get new data and save it
+                    btagstosave = new byte[0]; //instant flush                    
+                    //get new document and save it
+                    byte[] bdocstosave = _service.ListDocsToArray(ref lst_docs_to_save);
+                    _io.write(ref bdocstosave, IO.IO_PARAM.DOC_STREAM);
+                    btagstosave = new byte[0]; //instant flush    
 
                     //get new log records and save it
 
 
-
                     //create/update page
-                    //byte[] b_array_to_save = _pages.makepage();
+                    //Globals.PagesParams.
+                    //byte[] b_collection_to_save = _pages.makepage(ref lst_docs_to_save); //collection
+
+
                 }
             }
             catch (Exception) //close stream
@@ -247,9 +253,29 @@ namespace KVStorage
         internal ulong collection = 0;
         internal List<ulong> tag_hash = new List<ulong>();
         internal List<byte> tag_data_type = new List<byte>();
-        internal List<long> tag_data_pos = new List<long>();
+        //internal List<long> tag_data_pos = new List<long>();
         internal List<int> tag_data_len = new List<int>();
         internal List<byte[]> tag_data = new List<byte[]>();
+        internal int _tag_data_length = 0; //stores sum of all data length
+
+        internal byte[] getbytes()
+        {
+            Service _service = new Service();
+            //KVDocument _kv=this;
+            int i = 0, ipos=0, icount = this.tag_hash.Count, ifulldoclen = 8 + (8 + 1) * icount + this._tag_data_length;
+            byte[] b_out = new byte[ifulldoclen];
+            //append collection
+            _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.collection), ipos); ipos += 8;
+            //append other stuff (tag_hash, tag_type, tag_data)
+            for (i = 0; i < icount; i++) //go thru all docs
+            {
+                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_hash[i]), ipos); ipos += 8;
+                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_data_type[i]), ipos); ipos++;
+                _service.InsertBytes(ref b_out, this.tag_data[i], ipos); ipos += this.tag_data[i].Length;
+            }//for
+
+            return b_out;
+        }
     }
 
 

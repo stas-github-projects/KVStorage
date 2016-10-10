@@ -17,7 +17,7 @@ namespace KVStorage
         internal bool init()//string filename)
         {
             bool bool_ret = true, bool_new_dir = false;
-            
+
             if (Globals.storage_dir.Length == 0) { return false; }
 
             //DirectoryInfo dirinfo = new DirectoryInfo(Globals.storage_dir);
@@ -85,7 +85,7 @@ namespace KVStorage
 
             if (param == IO_PARAM.COLS_STREAM) //save cols
             {
-                if(fstream_cols!=null)
+                if (fstream_cols != null)
                 {
                     fstream_cols.Position = fstream_cols.Length;
                     fstream_cols.Write(barray, 0, barray.Length);
@@ -103,10 +103,20 @@ namespace KVStorage
                     bool_ret = true;
                 }
             }
-            else if (param == IO_PARAM.DATA_STREAM) //save data
-            { }
+            else if (param == IO_PARAM.DOC_STREAM) //save data
+            {
+                if (fstream_data != null)
+                {
+                    fstream_data.Position = fstream_data.Length;
+                    fstream_data.Write(barray, 0, barray.Length);
+                    fstream_data.Position = fstream_data.Length;
+                    bool_ret = true;
+                }
+            }
             else if (param == IO_PARAM.LOG_STREAM) //save log
-            { }
+            { 
+                //TO-DO
+            }
 
             return bool_ret;
         }
@@ -120,7 +130,7 @@ namespace KVStorage
         }
 
         internal enum IO_PARAM
-        { COLS_STREAM = 0, TAGS_STREAM = 1, DATA_STREAM = 2, LOG_STREAM = 4 };
+        { COLS_STREAM = 0, TAGS_STREAM = 1, DOC_STREAM = 2, LOG_STREAM = 4 };
 
     }
 }

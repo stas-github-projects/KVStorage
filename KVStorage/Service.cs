@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -70,6 +71,28 @@ namespace KVStorage
             { _out = _in.Substring(0, istart); return _out; }
             else
             { return _in; }
+        }
+
+        internal byte[] ListDocsToArray(ref List<KVDocument> lst_docs)
+        {
+            var buffers = new List<byte[]>();
+            int i=0,icount=lst_docs.Count,itotal=0;
+
+            //get buffer size
+            for (i = 0; i < icount; i++)
+            { itotal += (8 + (8 + 1) * lst_docs[i].tag_hash.Count + lst_docs[i]._tag_data_length); }
+
+            //int totalLength = lst_docs.Sum<byte[]>(buffer => buffer.Length);
+            byte[] fullBuffer = new byte[itotal];
+
+            int insertPosition = 0;
+            for (i = 0; i < icount;i++ )//byte[] buffer in lst_docs)
+            {
+                byte[] buffer = lst_docs[i].getbytes();
+                buffer.CopyTo(fullBuffer, insertPosition);
+                insertPosition += buffer.Length;
+            }
+            return fullBuffer;
         }
     }
 
