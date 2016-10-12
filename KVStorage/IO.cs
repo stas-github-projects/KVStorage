@@ -11,8 +11,23 @@ namespace KVStorage
         FileStream fstream_cols;
         FileStream fstream_tags;
         FileStream fstream_data;
-        FileStream fstream_log;
+        FileStream fstream_tagindex;
 
+        internal long get_stream_length(IO_PARAM param)
+        {
+            switch(param)
+            {
+                case IO_PARAM.COLS_STREAM: 
+                    if (fstream_cols != null) { return fstream_cols.Length; } else { return 0; }
+                case IO_PARAM.DOC_STREAM:
+                    if (fstream_data != null) { return fstream_data.Length; } else { return 0; }
+                case IO_PARAM.TAGS_STREAM:
+                    if (fstream_tags != null) { return fstream_tags.Length; } else { return 0; }
+                case IO_PARAM.TAGS_INDEX_STREAM:
+                    if (fstream_tagindex != null) { return fstream_tagindex.Length; } else { return 0; } 
+                default: return 0;
+            }
+        }
 
         internal bool init()//string filename)
         {
@@ -36,6 +51,7 @@ namespace KVStorage
                     Globals.storage_cols = Globals.storage_dir + @"\" + Globals.storage_cols;
                     Globals.storage_tags = Globals.storage_dir + @"\" + Globals.storage_tags;
                     Globals.storage_data = Globals.storage_dir + @"\" + Globals.storage_data;
+                    Globals.storage_tagindex = Globals.storage_dir + @"\" + Globals.storage_tagindex;
                     Globals.storage_log = Globals.storage_dir + @"\" + Globals.storage_log;
                 }
 
@@ -44,21 +60,30 @@ namespace KVStorage
                     fstream_cols = new FileStream(Globals.storage_cols, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
                     fstream_tags = new FileStream(Globals.storage_tags, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
                     fstream_data = new FileStream(Globals.storage_data, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
-                    fstream_log = new FileStream(Globals.storage_log, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
-
+                    fstream_tagindex = new FileStream(Globals.storage_tagindex, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
                 }
                 else //open
                 {
                     FileInfo fcols = new FileInfo(Globals.storage_cols);
                     FileInfo ftags = new FileInfo(Globals.storage_tags);
                     FileInfo fdata = new FileInfo(Globals.storage_data);
+                    FileInfo ftagindex = new FileInfo(Globals.storage_tagindex);
                     FileInfo flog = new FileInfo(Globals.storage_log);
 
-                    fstream_cols = new FileStream(Globals.storage_cols, FileMode.Open, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
-                    fstream_tags = new FileStream(Globals.storage_tags, FileMode.Open, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
-                    fstream_data = new FileStream(Globals.storage_data, FileMode.Open, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
-                    fstream_log = new FileStream(Globals.storage_log, FileMode.Open, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
-
+                    if (fcols.Exists == false)
+                    {
+                        fstream_cols = new FileStream(Globals.storage_cols, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
+                        fstream_tags = new FileStream(Globals.storage_tags, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
+                        fstream_data = new FileStream(Globals.storage_data, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
+                        fstream_tagindex = new FileStream(Globals.storage_tagindex, FileMode.Create, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
+                    }
+                    else
+                    {
+                        fstream_cols = new FileStream(Globals.storage_cols, FileMode.Open, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
+                        fstream_tags = new FileStream(Globals.storage_tags, FileMode.Open, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
+                        fstream_data = new FileStream(Globals.storage_data, FileMode.Open, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
+                        fstream_tagindex = new FileStream(Globals.storage_tagindex, FileMode.Open, FileAccess.ReadWrite, FileShare.None, Globals.storage_read_write_buffer);
+                    }
                 }
             }
             catch (Exception) //on error return false
@@ -69,7 +94,7 @@ namespace KVStorage
 
         internal bool storageisopen()
         {
-            if (fstream_cols != null && fstream_tags != null && fstream_data != null && fstream_log != null)
+            if (fstream_cols != null && fstream_tags != null && fstream_data != null && fstream_tagindex != null)
             { return true; }
             return false;
         }
@@ -113,13 +138,13 @@ namespace KVStorage
                     bool_ret = true;
                 }
             }
-            else if (param == IO_PARAM.LOG_STREAM) //save log
+            else if (param == IO_PARAM.TAGS_INDEX_STREAM) //save tag indexes
             {
-                //if (fstream_tags != null) //TO-DO //LOGS
+                if (fstream_tagindex != null)
                 {
-                    fstream_log.Position = fstream_log.Length;
-                    fstream_log.Write(barray, 0, barray.Length);
-                    fstream_log.Position = fstream_log.Length;
+                    fstream_tagindex.Position = fstream_tagindex.Length;
+                    fstream_tagindex.Write(barray, 0, barray.Length);
+                    fstream_tagindex.Position = fstream_tagindex.Length;
                     bool_ret = true;
                 }
             }
@@ -132,11 +157,11 @@ namespace KVStorage
             if (fstream_cols != null) { fstream_cols.Close(); fstream_cols = null; }
             if (fstream_tags != null) { fstream_tags.Close(); fstream_tags = null; }
             if (fstream_data != null) { fstream_data.Close(); fstream_data = null; }
-            if (fstream_log != null) { fstream_log.Close(); fstream_log = null; }
+            if (fstream_tagindex != null) { fstream_tagindex.Close(); fstream_tagindex = null; }
         }
 
         internal enum IO_PARAM
-        { COLS_STREAM = 0, TAGS_STREAM = 1, DOC_STREAM = 2, LOG_STREAM = 4 };
+        { COLS_STREAM = 0, TAGS_STREAM = 1, DOC_STREAM = 2, TAGS_INDEX_STREAM = 4, LOG_STREAM = 5 }
 
     }
 }

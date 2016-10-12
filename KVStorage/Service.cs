@@ -80,7 +80,7 @@ namespace KVStorage
 
             //get buffer size
             for (i = 0; i < icount; i++)
-            { itotal += (8 + (8 + 1) * lst_docs[i].tag_hash.Count + lst_docs[i]._tag_data_length); }
+            { itotal += (8 + (8 + 4 + 1) * lst_docs[i].tag_hash.Count + lst_docs[i]._tag_data_length); }
 
             //int totalLength = lst_docs.Sum<byte[]>(buffer => buffer.Length);
             byte[] fullBuffer = new byte[itotal];

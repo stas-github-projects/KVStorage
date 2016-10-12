@@ -63,6 +63,10 @@ namespace KVStorage
         public bool set(string collection, Document document)
         {
             bool bool_ret = false;
+            //set virtual length
+            if (Globals.storage_virtual_length == 0)
+            { Globals.storage_virtual_length = _io.get_stream_length(IO.IO_PARAM.DOC_STREAM); }
+            //stsrt async
             Task<KVDocument> task_doc = _add_async(collection, document);
             task_doc.Wait();
             //get result
@@ -75,6 +79,7 @@ namespace KVStorage
         private async Task<KVDocument> _add_async(string collection, Document document)
         {
             int i = 0;
+            long l_doc_pos = 0; //pos of document in storage
             ulong uhash_col = 0;
             bool bool_has_dict = false;
             //Dictionary<string, object> document_dictionary;
@@ -116,15 +121,18 @@ namespace KVStorage
                         if (_fieldInfo.Key.Length > 0)
                         {
                             if (_fieldInfo.Key.Length > Globals.storage_tag_max_len) { _doc = null; break; }
-                            _doc.tag_hash.Add(_tags.add(_fieldInfo.Key)); //get/set tags
+                            _doc.tag_hash.Add(_tags.add(_fieldInfo.Key, Globals.storage_virtual_length));//l_doc_pos)); //get/set tags
                             //_doc.tag_data_pos.Add(0);
                             _doc.tag_data_type.Add(_datatype.returnTypeAndRawByteArray(_fieldInfo.Value, out temp_bytes));
                             _doc.tag_data_len.Add(temp_bytes.Length);
                             _doc.tag_data.Add(temp_bytes); //data byte array
                             _doc._tag_data_length += temp_bytes.Length; //sum of all data length
+                            Globals.storage_virtual_length += _doc.getlength();
                         }
                     }
                 }//foreach
+                //update virtual length
+                //Globals.storage_virtual_length += _doc.getlength(); //get size of the whole doc
                 return await Task.FromResult(_doc);
             }
             return null;
@@ -139,6 +147,7 @@ namespace KVStorage
 
 
             //get data out the memory
+            /*
             for (int i = 0; i < lst_docs_to_save.Count; i++)
             {
                 Document _doc = new Document();
@@ -152,8 +161,31 @@ namespace KVStorage
                 lst_out.Add(_doc); //add document to output list
 
             }//for documents
+            */
+            
+            //run async method
 
-            return lst_out;
+
+
+            Task<List<Document>> task_get= _get_async();
+            task_get.Wait();
+            //flush
+            _tags.flush();
+            Globals.storage_virtual_length = 0;
+            // result
+            if (task_get.Result != null)
+            { return task_get.Result; }
+            else
+            { return lst_out; }
+        }
+
+        private async Task<List<Document>> _get_async()
+        {
+            List<Document> lst_out = new List<Document>(10);
+
+
+
+            return await Task.FromResult(lst_out);
         }
 
         public bool commit()
@@ -162,6 +194,10 @@ namespace KVStorage
 
             Task<bool> task_commit = _commit_async();
             task_commit.Wait();
+            //flush
+            _tags.flush();
+            Globals.storage_virtual_length = 0;
+            this.lst_docs_to_save.Clear();
             // result
             if (task_commit.Result == false)
             { return false; }
@@ -188,15 +224,17 @@ namespace KVStorage
                     _io.write(ref bcolstosave, IO.IO_PARAM.COLS_STREAM);
                     bcolstosave = new byte[0]; //instant flush                    
                     //get new tags and save it
-                    byte[] btagstosave = _tags.getbytes();
+                    byte[] btagstosave = _tags.get_tags_bytes();
                     _io.write(ref btagstosave, IO.IO_PARAM.TAGS_STREAM);
                     btagstosave = new byte[0]; //instant flush                    
                     //get new document and save it
                     byte[] bdocstosave = _service.ListDocsToArray(ref lst_docs_to_save);
                     _io.write(ref bdocstosave, IO.IO_PARAM.DOC_STREAM);
                     btagstosave = new byte[0]; //instant flush
-                    //get new log records and save it
-
+                    //get new tags indexes records and save it
+                    byte[] btagindexestosave = _tags.get_tagindexes_bytes();
+                    _io.write(ref btagindexestosave, IO.IO_PARAM.TAGS_INDEX_STREAM);
+                    btagstosave = new byte[0]; //instant flush   
 
                     //create/update page
                     //Globals.PagesParams.
@@ -252,7 +290,7 @@ namespace KVStorage
         internal ulong collection = 0;
         internal List<ulong> tag_hash = new List<ulong>();
         internal List<byte> tag_data_type = new List<byte>();
-        //internal List<long> tag_data_pos = new List<long>();
+        internal List<long> tag_data_pos = new List<long>();
         internal List<int> tag_data_len = new List<int>();
         internal List<byte[]> tag_data = new List<byte[]>();
         internal int _tag_data_length = 0; //stores sum of all data length
@@ -261,7 +299,7 @@ namespace KVStorage
         {
             Service _service = new Service();
             //KVDocument _kv=this;
-            int i = 0, ipos=0, icount = this.tag_hash.Count, ifulldoclen = 8 + (8 + 1) * icount + this._tag_data_length;
+            int i = 0, ipos = 0, icount = this.tag_hash.Count, ifulldoclen = 8 + (8 + 1 + 4) * icount + this._tag_data_length;
             byte[] b_out = new byte[ifulldoclen];
             //append collection
             _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.collection), ipos); ipos += 8;
@@ -270,10 +308,16 @@ namespace KVStorage
             {
                 _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_hash[i]), ipos); ipos += 8;
                 _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_data_type[i]), ipos); ipos++;
+                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_data_len[i]), ipos); ipos += 4;
                 _service.InsertBytes(ref b_out, this.tag_data[i], ipos); ipos += this.tag_data[i].Length;
             }//for
 
             return b_out;
+        }
+        internal int getlength()
+        {
+            int iout = 8 + (8 + 1 + 4) * this.tag_hash.Count + this._tag_data_length;
+            return iout;
         }
     }
 

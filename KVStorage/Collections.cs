@@ -39,5 +39,11 @@ namespace KVStorage
             //result
             return bout;
         }
+        internal void flush()
+        {
+            dict_collections.Clear();
+            lst_cols_to_save.Clear();
+        }
+
     }
 }

@@ -13,10 +13,12 @@ namespace KVStorage
         internal static string storage_cols = "cols";
         internal static string storage_tags = "tags";
         internal static string storage_data = "data";
+        internal static string storage_tagindex = "tagidx";
         internal static string storage_log = "log";
 
         //system params
         internal static int storage_read_write_buffer = 1024 * 1024;
+        internal static long storage_virtual_length = 0;
 
         //user-defined params
         internal static byte storage_cols_in_memory = 0;
