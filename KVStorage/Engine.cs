@@ -79,7 +79,7 @@ namespace KVStorage
         private async Task<KVDocument> _add_async(string collection, Document document)
         {
             int i = 0;
-            long l_doc_pos = 0; //pos of document in storage
+            //long l_doc_pos = 0; //pos of document in storage
             ulong uhash_col = 0;
             bool bool_has_dict = false;
             //Dictionary<string, object> document_dictionary;
@@ -183,6 +183,17 @@ namespace KVStorage
         {
             List<Document> lst_out = new List<Document>(10);
 
+            //if streams are closed - out
+            if (_io.storageisopen() == false)
+            { if (_io.init() == false) { return null; } }
+
+            //search in tags
+
+
+            //search in tags indexes
+
+
+            //get out of data
 
 
             return await Task.FromResult(lst_out);
