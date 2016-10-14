@@ -79,7 +79,7 @@ namespace KVStorage
         private async Task<KVDocument> _add_async(string collection, Document document)
         {
             int i = 0;
-            //long l_doc_pos = 0; //pos of document in storage
+            long l_doc_pos = Globals.storage_virtual_length; //pos of document in storage
             ulong uhash_col = 0;
             bool bool_has_dict = false;
             //Dictionary<string, object> document_dictionary;
@@ -121,7 +121,7 @@ namespace KVStorage
                         if (_fieldInfo.Key.Length > 0)
                         {
                             if (_fieldInfo.Key.Length > Globals.storage_tag_max_len) { _doc = null; break; }
-                            _doc.tag_hash.Add(_tags.add(_fieldInfo.Key, Globals.storage_virtual_length));//l_doc_pos)); //get/set tags
+                            _doc.tag_hash.Add(_tags.add(_fieldInfo.Key, l_doc_pos));//l_doc_pos)); //get/set tags
                             //_doc.tag_data_pos.Add(0);
                             _doc.tag_data_type.Add(_datatype.returnTypeAndRawByteArray(_fieldInfo.Value, out temp_bytes));
                             _doc.tag_data_len.Add(temp_bytes.Length);
@@ -317,9 +317,9 @@ namespace KVStorage
             //append other stuff (tag_hash, tag_type, tag_data)
             for (i = 0; i < icount; i++) //go thru all docs
             {
-                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_hash[i]), ipos); ipos += 8;
-                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_data_type[i]), ipos); ipos++;
-                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_data_len[i]), ipos); ipos += 4;
+                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_hash[i]), ipos); ipos += 8; //tag hash
+                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_data_type[i]), ipos); ipos++; //tag data_type
+                _service.InsertBytes(ref b_out, BitConverter.GetBytes(this.tag_data_len[i]), ipos); ipos += 4; //tag data_length
                 _service.InsertBytes(ref b_out, this.tag_data[i], ipos); ipos += this.tag_data[i].Length;
             }//for
 

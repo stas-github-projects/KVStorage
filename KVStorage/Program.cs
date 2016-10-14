@@ -20,10 +20,12 @@ namespace KVStorage
             kvstorage.open("test");
 
             //get
-            /*
-            for (int i = 0; i < 10000; i++)
+            /**/
+            for (int i = 0; i < 1000; i++)
             {
-                KVStorage.Document _document = new Document() { { "name", "test" + i.ToString() }, { "id", i }, { "time", DateTime.Now.Ticks } };//, {"fff", new List<string> { "dwer" + i } }};
+                KVStorage.Document _document = new Document() 
+                { { "name", "test" + i.ToString() }, { "id", i }, { "time", DateTime.Now.Ticks },
+                    {"description","As the message says, you have a task which threw an unhandled exception."},{"checkbox1","1"}};//, {"fff", new List<string> { "dwer" + i } }};
                 //_docum.Add("fff", new List<string> { "dwer" + i });
                 kvstorage.set("system_info", _document);
             }
@@ -33,7 +35,7 @@ namespace KVStorage
 
             //set
             //var output_document = kvstorage.get();
-            List<Document> lst_out_docs = kvstorage.get("get * WHERE ('id'>10 && id<20) ! ('name'=='test22');");
+            //List<Document> lst_out_docs = kvstorage.get("get * WHERE ('id'>10 && id<20) ! ('name'=='test22');");
 
             //close storage
             kvstorage.close();

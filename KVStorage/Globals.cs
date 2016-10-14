@@ -19,6 +19,11 @@ namespace KVStorage
         //system params
         internal static int storage_read_write_buffer = 1024 * 1024;
         internal static long storage_virtual_length = 0;
+        
+        //tag indexes
+        //internal static long tagindex_first_page_pos = 0;
+        //internal static long tagindex_last_page_pos = 0;
+        //internal static ushort tagindex_last_page_freecell = 0;
 
         //user-defined params
         internal static byte storage_cols_in_memory = 0;
