@@ -146,32 +146,14 @@ namespace KVStorage
             //parse conditions
 
 
-            //get data out the memory
-            /*
-            for (int i = 0; i < lst_docs_to_save.Count; i++)
-            {
-                Document _doc = new Document();
-                KVDocument _kvdoc = lst_docs_to_save[i]; //create new KVDocument
-                List<ulong> lst_hashes = _kvdoc.tag_hash.GetRange(0, lst_docs_to_save[i].tag_hash.Count); //gt all hashes out of document
-                for (int j = 0; j < lst_hashes.Count; j++) //fill up output document with information
-                {
-                    dynamic _value = _datatype.returnObjectFromByteArray(_kvdoc.tag_data[j], _kvdoc.tag_data_type[j]);
-                    _doc.Add(_tags.getname(lst_hashes[j]), _value);
-                }//for hashes
-                lst_out.Add(_doc); //add document to output list
-
-            }//for documents
-            */
-            
             //run async method
-
-
-
-            Task<List<Document>> task_get= _get_async();
+            Task<List<Document>> task_get = _get_async();
             task_get.Wait();
             //flush
             _tags.flush();
             Globals.storage_virtual_length = 0;
+            //flush GetParams class
+            Globals.GetParams.flush();
             // result
             if (task_get.Result != null)
             { return task_get.Result; }
@@ -188,7 +170,7 @@ namespace KVStorage
             { if (_io.init() == false) { return null; } }
 
             //search in tags
-
+            List<bool> lst_tags_result = _io.search_for_tags();
 
             //search in tags indexes
 

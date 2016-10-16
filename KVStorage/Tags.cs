@@ -9,9 +9,9 @@ namespace KVStorage
     {
         HashFNV _hash = new HashFNV();        
         Dictionary<ulong, string> dict_tags = new Dictionary<ulong, string>(100); //tag_hash + tag_name
-        Dictionary<long, List<ulong>> dict_docs_pos = new Dictionary<long, List<ulong>>(100); //pos_of_doc + list<tag_hashes>
+        Dictionary<ulong, List<long>> dict_docs_pos = new Dictionary<ulong, List<long>>(100); //hash + list<tag_posiotion>
         List<ulong> lst_tags_to_save = new List<ulong>(100); //list of tag_hases to save
-        List<long> lst_docs_to_save = new List<long>(100); //list of doc_pos to save
+        //List<ulong> lst_docs_to_save = new List<ulong>(100); //list of doc_pos to save
         int i_tag_indexes_length = 0;
         //List<ulong> lst_tag_indexes_to_save = new List<ulong>(100);
 
@@ -29,13 +29,16 @@ namespace KVStorage
             //{ dict_tags[hash].Add(tag_name); }
 
             //doc to save
-            if (dict_docs_pos.ContainsKey(pos_of_doc) == false)
+            if (dict_docs_pos.ContainsKey(hash) == false)
             {
-                dict_docs_pos.Add(pos_of_doc, new List<ulong> { hash });
-                lst_docs_to_save.Add(pos_of_doc); i_tag_indexes_length += (8 + 8 + 1); //pos_of_doc + (tag_active + tag_hash)
+                dict_docs_pos.Add(hash, new List<long> { pos_of_doc });
+                /*lst_docs_to_save.Add(hash);*/ i_tag_indexes_length += (8 + 8 + 1); //pos_of_doc + (tag_active + tag_hash)
             }
             else
-            { dict_docs_pos[pos_of_doc].Add(hash); i_tag_indexes_length += (8 + 1); } //(tag_active + tag_hash)
+            { 
+
+                dict_docs_pos[hash].Add(pos_of_doc); i_tag_indexes_length += (8 + 1);
+            } //(tag_active + tag_hash)
 
 
             return hash;
@@ -60,24 +63,44 @@ namespace KVStorage
             //result
             return bout;
         }
-        /*internal byte[] get_tagindexes_bytes()
+
+        internal byte[] get_tagindexes_bytes()
         {
-            int i = 0, index = 0, icount = lst_tags_to_save.Count, ipos = 0, ibuflen = i_tag_indexes_length; //icount * (8 + 1 + 8);
+            int iposinbufcount = 4; //count of positions in the buffer
+            int i = 0, j = 0, index = 0, ilen = 0, icount = lst_tags_to_save.Count, ipos = 0, ibuflen = 8 + iposinbufcount * (8 + 1);//i_tag_indexes_length;
+            long l_tagpos = 0;
+            ulong ul_hash = 0;
+            List<byte[]>lst_byte_arrays=new List<byte[]>(10);
             byte[] bout = new byte[ibuflen];
 
-            for (i = 0; i < icount; i++)
+            try
             {
-                for (index = 0; index < dict_tags_pos[lst_tags_to_save[i]].Count; index++)
+                for (i = 0; i < icount; i++)
                 {
-                    Globals._service.InsertBytes(ref bout, (byte)1, ipos); ipos++; //active
-                    Globals._service.InsertBytes(ref bout, BitConverter.GetBytes(lst_tags_to_save[i]), ipos); ipos += 8; //tag hash
-                    Globals._service.InsertBytes(ref bout, BitConverter.GetBytes(dict_tags_pos[lst_tags_to_save[i]][index]), ipos); ipos += 8; //pos of document
-                }
-            }//for
-            //result
-            return bout;
-        }*/
-        internal byte[] get_tagindexes_bytes()
+                    index = 0; ipos = 0;
+                    ul_hash = lst_tags_to_save[i];//[index];
+                    Globals._service.InsertBytes(ref bout, BitConverter.GetBytes(ul_hash), ipos); ipos += 8; //insert pos_of_doc
+                    for (j = 0; j < dict_docs_pos[ul_hash].Count; j++)
+                    {
+                        Globals._service.InsertBytes(ref bout, (byte)1, ipos); ipos++; //active hash
+                        l_tagpos = dict_docs_pos[lst_tags_to_save[i]][j];
+                        Globals._service.InsertBytes(ref bout, BitConverter.GetBytes(l_tagpos), ipos); ipos += 8; //tag hash
+                        index++;
+                        if (index == iposinbufcount) //exit if've reached the limit
+                        { lst_byte_arrays.Add(bout); index = 0; bout = new byte[ibuflen]; ipos = 0; }
+                    }
+                    //extra save for the remains
+                    if (index > 0) { lst_byte_arrays.Add(bout); }
+                }//for
+            }
+            catch (Exception)
+            { return new byte[0]; }
+            
+            //convert list of bytes arrays to byte array and return result
+            return Globals._service.ListByteArraysToOneDimensionByteArray(ref lst_byte_arrays, ibuflen);
+        }
+        /*
+        internal byte[] get_tagindexes_bytes_old()
         {
             int i = 0, index = 0, ilen = 0, icount = lst_docs_to_save.Count, ipos = 0, ibuflen = i_tag_indexes_length;
             long l_doc = 0;
@@ -104,6 +127,7 @@ namespace KVStorage
             //result
             return bout;
         }
+        */
         internal void flush()
         {
             dict_tags.Clear();

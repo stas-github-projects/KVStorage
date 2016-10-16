@@ -31,6 +31,18 @@ namespace KVStorage
         internal static byte storage_col_max_len = 30;
         internal static byte storage_tag_max_len = 30;
 
+        //get params
+        internal static class GetParams
+        {
+            internal static List<string> lst_tags = new List<string>(10);
+
+            internal static void flush()
+            {
+                lst_tags.Clear();
+            }
+        }
+
+        /*
         internal static class PagesParams
         {
             internal static bool bool_update_existing_page;
@@ -46,6 +58,7 @@ namespace KVStorage
                 current_freecell = 0; max_freecells = 0;
             }
         }
+        */
     }
 
 }

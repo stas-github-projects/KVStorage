@@ -21,7 +21,7 @@ namespace KVStorage
 
             //get
             /**/
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 10; i++)
             {
                 KVStorage.Document _document = new Document() 
                 { { "name", "test" + i.ToString() }, { "id", i }, { "time", DateTime.Now.Ticks },

@@ -94,6 +94,18 @@ namespace KVStorage
             }
             return fullBuffer;
         }
+
+        internal byte[] ListByteArraysToOneDimensionByteArray(ref List<byte[]> lst_arr, int i_list_element_size=0)
+        {
+            int i = 0, ipos = 0, icount = lst_arr.Count;
+            byte[] bout = new byte[icount * i_list_element_size];
+            for ( i = 0; i < icount; i++)
+            {
+                Globals._service.InsertBytes(ref bout, lst_arr[i], ipos); ipos += i_list_element_size;
+            }
+            return bout;
+        }
+
     }
 
 }

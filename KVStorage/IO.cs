@@ -160,6 +160,15 @@ namespace KVStorage
             if (fstream_tagindex != null) { fstream_tagindex.Close(); fstream_tagindex = null; }
         }
 
+        internal List<bool> search_for_tags()
+        {
+            List<bool> lst_result = new List<bool>();
+            //infos are in Globals.GetParams
+            
+            return lst_result;
+        }
+
+
         internal enum IO_PARAM
         { COLS_STREAM = 0, TAGS_STREAM = 1, DOC_STREAM = 2, TAGS_INDEX_STREAM = 4, LOG_STREAM = 5 }
 
