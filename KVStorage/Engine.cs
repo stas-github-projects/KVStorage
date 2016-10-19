@@ -22,9 +22,9 @@ namespace KVStorage
         //globals
         //static DataTypeSerializer _datatype = new DataTypeSerializer();
         //HashFNV _hash = new HashFNV();
-        Collections _cols = new Collections();
-        Tags _tags = new Tags();
-        IO _io = new IO();
+        //Collections _cols = new Collections();
+        //Tags _tags = new Tags();
+        //IO _io = new IO();
         //Pages _pages = new Pages();
         //Service _service = new Service();
         //Search _searchdocs = new Search();
@@ -37,15 +37,15 @@ namespace KVStorage
             bool bool_ret = false;
 
             Globals.storage_name = storage_name; //folder where all files are
-            _io.parseparams(parameters); //parse params
-            bool_ret = _io.init(); //init storage
+            Globals._io.parseparams(parameters); //parse params
+            bool_ret = Globals._io.init(); //init storage
 
             return bool_ret;
         }
 
         public void close()
         {
-            _io.finalize(); //close storage
+            Globals._io.finalize(); //close storage
         }
 
         //
@@ -65,7 +65,7 @@ namespace KVStorage
             bool bool_ret = false;
             //set virtual length
             if (Globals.storage_virtual_length == 0)
-            { Globals.storage_virtual_length = _io.get_stream_length(); }
+            { Globals.storage_virtual_length = Globals._io.get_stream_length(); }
             //stsrt async
             Task<KVDocument> task_doc = _add_async(collection, document);
             task_doc.Wait();
@@ -88,7 +88,7 @@ namespace KVStorage
             if (collection.Length != 0)
             {
                 if (collection.Length > Globals.storage_col_max_len) { return null; } //colname more than expected
-                uhash_col = _cols.add(collection);
+                uhash_col = Globals._cols.add(collection);
             }
 
             //create new document
@@ -122,7 +122,7 @@ namespace KVStorage
                         if (_fieldInfo.Key.Length > 0)
                         {
                             if (_fieldInfo.Key.Length > Globals.storage_tag_max_len) { _doc = null; break; }
-                            _doc.tag_hash.Add(_tags.add(_fieldInfo.Key, l_doc_pos));//l_doc_pos)); //get/set tags
+                            _doc.tag_hash.Add(Globals._tags.add(_fieldInfo.Key, l_doc_pos));//l_doc_pos)); //get/set tags
                             //_doc.tag_data_pos.Add(0);
                             _doc.tag_data_type.Add(Globals._datatype.returnTypeAndRawByteArray(_fieldInfo.Value, out temp_bytes));
                             _doc.tag_data_len.Add(temp_bytes.Length);
@@ -152,7 +152,7 @@ namespace KVStorage
             Task<List<Document>> task_get= _get_async();
             task_get.Wait();
             //flush
-            _tags.flush();
+            Globals._tags.flush();
             Globals.storage_virtual_length = 0;
             // result
             if (task_get.Result != null)
@@ -166,8 +166,8 @@ namespace KVStorage
             List<Document> lst_out = new List<Document>(10);
 
             //if streams are closed - out
-            if (_io.storageisopen() == false)
-            { if (_io.init() == false) { return null; } }
+            if (Globals._io.storageisopen() == false)
+            { if (Globals._io.init() == false) { return null; } }
 
             //search in tags
 
@@ -188,7 +188,7 @@ namespace KVStorage
             Task<bool> task_commit = _commit_async();
             task_commit.Wait();
             //flush
-            _tags.flush();
+            Globals._tags.flush();
             Globals.storage_virtual_length = 0;
             this.lst_docs_to_save.Clear();
             // result
@@ -204,9 +204,9 @@ namespace KVStorage
             bool bool_ret = false;
 
             //search and paste documents
-            bool_ret = _io.storageisopen();
+            bool_ret = Globals._io.storageisopen();
             if (bool_ret == false)
-            { bool_ret = _io.init(); } //try to reopen storage
+            { bool_ret = Globals._io.init(); } //try to reopen storage
 
             try
             {
@@ -217,15 +217,15 @@ namespace KVStorage
 
 
                     //get new cols and save it
-                    byte[] bcolstosave = _cols.getbytes();
-                    _io.write(ref bcolstosave);
+                    byte[] bcolstosave = Globals._cols.getbytes();
+                    Globals._io.write(ref bcolstosave);
                     bcolstosave = new byte[0]; //instant flush                    
                 }
             }
             catch (Exception) //close stream
-            { _io.finalize(); }
-            _io.finalize();
-            _io.finalize();
+            { Globals._io.finalize(); }
+            Globals._io.finalize();
+            Globals._io.finalize();
             //result
             return await Task.FromResult(bool_ret);
         }
