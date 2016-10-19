@@ -7,13 +7,13 @@ namespace KVStorage
 {
     internal class Collections
     {
-        HashFNV _hash = new HashFNV();
+        //HashFNV _hash = new HashFNV();
         Dictionary<ulong, string> dict_collections = new Dictionary<ulong, string>(100);
         List<ulong> lst_cols_to_save = new List<ulong>(100);
 
         internal ulong add(string collection_name)
         {
-            ulong hash = _hash.CreateHash64bit(Encoding.ASCII.GetBytes(collection_name));
+            ulong hash = Globals._hash.CreateHash64bit(Encoding.ASCII.GetBytes(collection_name));
             if (dict_collections.ContainsKey(hash) == false)
             { dict_collections.Add(hash, collection_name); lst_cols_to_save.Add(hash); return hash; }
             else

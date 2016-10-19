@@ -20,13 +20,13 @@ namespace KVStorage
     public class Engine
     {
         //globals
-        static DataTypeSerializer _datatype = new DataTypeSerializer();
+        //static DataTypeSerializer _datatype = new DataTypeSerializer();
         //HashFNV _hash = new HashFNV();
         Collections _cols = new Collections();
         Tags _tags = new Tags();
         IO _io = new IO();
         //Pages _pages = new Pages();
-        Service _service = new Service();
+        //Service _service = new Service();
         //Search _searchdocs = new Search();
 
         List<KVDocument> lst_docs_to_save = new List<KVDocument>();
@@ -36,7 +36,7 @@ namespace KVStorage
         {
             bool bool_ret = false;
 
-            Globals.storage_dir = storage_name; //folder where all files are
+            Globals.storage_name = storage_name; //folder where all files are
             _io.parseparams(parameters); //parse params
             bool_ret = _io.init(); //init storage
 
@@ -65,7 +65,7 @@ namespace KVStorage
             bool bool_ret = false;
             //set virtual length
             if (Globals.storage_virtual_length == 0)
-            { Globals.storage_virtual_length = _io.get_stream_length(IO.IO_PARAM.DOC_STREAM); }
+            { Globals.storage_virtual_length = _io.get_stream_length(); }
             //stsrt async
             Task<KVDocument> task_doc = _add_async(collection, document);
             task_doc.Wait();
@@ -114,6 +114,7 @@ namespace KVStorage
 
                 KVDocument _doc = new KVDocument();
                 _doc.collection = uhash_col; //hash collection
+                _doc.doc_id = Globals.storage_document_id;
                 foreach (var _fieldInfo in document_dictionary)//document.dict) //go thru all fields
                 {
                     //if (fieldInfo.Name.Length < _globals.storage_tags_name_length) //get info if field's name not more than it's possible max value
@@ -123,7 +124,7 @@ namespace KVStorage
                             if (_fieldInfo.Key.Length > Globals.storage_tag_max_len) { _doc = null; break; }
                             _doc.tag_hash.Add(_tags.add(_fieldInfo.Key, l_doc_pos));//l_doc_pos)); //get/set tags
                             //_doc.tag_data_pos.Add(0);
-                            _doc.tag_data_type.Add(_datatype.returnTypeAndRawByteArray(_fieldInfo.Value, out temp_bytes));
+                            _doc.tag_data_type.Add(Globals._datatype.returnTypeAndRawByteArray(_fieldInfo.Value, out temp_bytes));
                             _doc.tag_data_len.Add(temp_bytes.Length);
                             _doc.tag_data.Add(temp_bytes); //data byte array
                             _doc._tag_data_length += temp_bytes.Length; //sum of all data length
@@ -131,6 +132,8 @@ namespace KVStorage
                         }
                     }
                 }//foreach
+                //increase document id
+                Globals.storage_document_id++;
                 //update virtual length
                 //Globals.storage_virtual_length += _doc.getlength(); //get size of the whole doc
                 return await Task.FromResult(_doc);
@@ -144,29 +147,8 @@ namespace KVStorage
             List<Document> lst_out = new List<Document>(10);
 
             //parse conditions
-
-
-            //get data out the memory
-            /*
-            for (int i = 0; i < lst_docs_to_save.Count; i++)
-            {
-                Document _doc = new Document();
-                KVDocument _kvdoc = lst_docs_to_save[i]; //create new KVDocument
-                List<ulong> lst_hashes = _kvdoc.tag_hash.GetRange(0, lst_docs_to_save[i].tag_hash.Count); //gt all hashes out of document
-                for (int j = 0; j < lst_hashes.Count; j++) //fill up output document with information
-                {
-                    dynamic _value = _datatype.returnObjectFromByteArray(_kvdoc.tag_data[j], _kvdoc.tag_data_type[j]);
-                    _doc.Add(_tags.getname(lst_hashes[j]), _value);
-                }//for hashes
-                lst_out.Add(_doc); //add document to output list
-
-            }//for documents
-            */
             
             //run async method
-
-
-
             Task<List<Document>> task_get= _get_async();
             task_get.Wait();
             //flush
@@ -230,28 +212,14 @@ namespace KVStorage
             {
                 if (bool_ret == true) //storage initialization is ok
                 {
+                    Globals.PagesParams.flush();
+                    //Globals.PagesParams.
+
+
                     //get new cols and save it
                     byte[] bcolstosave = _cols.getbytes();
-                    _io.write(ref bcolstosave, IO.IO_PARAM.COLS_STREAM);
+                    _io.write(ref bcolstosave);
                     bcolstosave = new byte[0]; //instant flush                    
-                    //get new tags and save it
-                    byte[] btagstosave = _tags.get_tags_bytes();
-                    _io.write(ref btagstosave, IO.IO_PARAM.TAGS_STREAM);
-                    btagstosave = new byte[0]; //instant flush                    
-                    //get new document and save it
-                    byte[] bdocstosave = _service.ListDocsToArray(ref lst_docs_to_save);
-                    _io.write(ref bdocstosave, IO.IO_PARAM.DOC_STREAM);
-                    btagstosave = new byte[0]; //instant flush
-                    //get new tags indexes records and save it
-                    byte[] btagindexestosave = _tags.get_tagindexes_bytes();
-                    _io.write(ref btagindexestosave, IO.IO_PARAM.TAGS_INDEX_STREAM);
-                    btagstosave = new byte[0]; //instant flush   
-
-                    //create/update page
-                    //Globals.PagesParams.
-                    //byte[] b_collection_to_save = _pages.makepage(ref lst_docs_to_save); //collection
-
-
                 }
             }
             catch (Exception) //close stream
@@ -299,6 +267,7 @@ namespace KVStorage
     internal class KVDocument
     {
         internal ulong collection = 0;
+        internal int doc_id = 0;
         internal List<ulong> tag_hash = new List<ulong>();
         internal List<byte> tag_data_type = new List<byte>();
         internal List<long> tag_data_pos = new List<long>();

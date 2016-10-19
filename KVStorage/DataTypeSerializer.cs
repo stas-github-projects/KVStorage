@@ -7,7 +7,7 @@ namespace KVStorage
 {
     internal class DataTypeSerializer
     {
-        internal Service _service = Globals._service;
+        //internal Service _service = Globals._service;
 
         public byte returnTypeAndRawByteArray(object _data, out byte[] out_bytes)
         {
@@ -117,8 +117,8 @@ namespace KVStorage
                 out_bytes = new byte[ilen];
                 for (i = 0; i < lst_string.Count; i++)
                 {
-                    _service.InsertBytes(ref out_bytes, BitConverter.GetBytes(arr_lengths[i]), ipos); ipos += 4;
-                    _service.InsertBytes(ref out_bytes, Encoding.ASCII.GetBytes(lst_string[i]), ipos); ipos += arr_lengths[i];// lst_string[i].Length;
+                    Globals._service.InsertBytes(ref out_bytes, BitConverter.GetBytes(arr_lengths[i]), ipos); ipos += 4;
+                    Globals._service.InsertBytes(ref out_bytes, Encoding.ASCII.GetBytes(lst_string[i]), ipos); ipos += arr_lengths[i];// lst_string[i].Length;
                 }
                 //return
                 _data_type = 18;

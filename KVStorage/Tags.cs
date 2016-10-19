@@ -7,7 +7,7 @@ namespace KVStorage
 {
     internal class Tags
     {
-        HashFNV _hash = new HashFNV();        
+        //HashFNV _hash = new HashFNV();        
         Dictionary<ulong, string> dict_tags = new Dictionary<ulong, string>(100); //tag_hash + tag_name
         Dictionary<long, List<ulong>> dict_docs_pos = new Dictionary<long, List<ulong>>(100); //pos_of_doc + list<tag_hashes>
         List<ulong> lst_tags_to_save = new List<ulong>(100); //list of tag_hases to save
@@ -18,7 +18,7 @@ namespace KVStorage
 
         internal ulong add(string tag_name, long pos_of_doc)
         {
-            ulong hash = _hash.CreateHash64bit(Encoding.ASCII.GetBytes(tag_name));
+            ulong hash = Globals._hash.CreateHash64bit(Encoding.ASCII.GetBytes(tag_name));
             /*if (dict_tags.ContainsKey(hash) == false)
             { dict_tags.Add(hash, tag_name); lst_tags_to_save.Add(hash); dict_tags_pos.Add(hash, new List<long> { pos_of_doc }); i_tag_indexes_length += 8; return hash; }
             else
